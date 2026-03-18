@@ -243,10 +243,13 @@ export function getHeatmapData(commodityId: string, range: number = 14): Heatmap
     // Last `range` historical days
     const slice = full.slice(Math.max(0, HIST_DAYS - range), HIST_DAYS)
 
-    const data: HeatmapCell[] = slice.map((point, i) => {
-      const prev = i > 0 ? (slice[i - 1].actual ?? point.actual ?? 1) : (point.actual ?? 1)
+    // Use cumulative change from the first day in the range so that
+    // regional price divergence (driven by distance factor) produces a
+    // rich spread of green → yellow → orange → red cells.
+    const basePrice = slice[0]?.actual ?? 1
+    const data: HeatmapCell[] = slice.map((point) => {
       const curr = point.actual ?? 0
-      const change = prev !== 0 ? ((curr - prev) / prev) * 100 : 0
+      const change = basePrice !== 0 ? ((curr - basePrice) / basePrice) * 100 : 0
       return {
         date: point.date,
         price: curr,
