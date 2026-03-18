@@ -8,31 +8,50 @@ Interactive prototype demo for PIDI 2026 hackathon submission. SupplAi is an AI-
 
 ## Tech Stack
 
-- **Framework:** Next.js 14 (App Router) + TypeScript
+- **Framework:** Next.js 15 (App Router) + TypeScript
 - **Styling:** Tailwind CSS + shadcn/ui components
-- **Charts:** Recharts (line, bar, heatmap)
-- **Maps:** React Simple Maps (SVG-based Indonesia map)
+- **Charts:** Recharts (line chart, bar chart, area chart)
+- **Price Matrix:** Custom styled HTML table with color-coded cells (no chart library needed)
+- **Maps:** React Simple Maps (SVG-based Indonesia map) with provinsi-level TopoJSON (~200KB)
 - **Animations:** Framer Motion (page transitions, counting numbers, route animations)
-- **Data:** Dummy data served via Next.js API Routes
-- **Deploy:** Vercel (frontend-only, zero backend)
+- **Data:** Dummy data served via Next.js API Routes, generated programmatically via seed script
+- **Deploy:** Vercel (`next build` → serverless API routes, NOT static export)
+
+## Design Tokens
+
+**Color Palette:**
+- Sidebar / Primary Dark: `#1a1f37`
+- Primary Blue: `#2563eb`
+- Accent Green (surplus/stable): `#22c55e`
+- Accent Yellow (warning): `#eab308`
+- Accent Orange (high alert): `#f97316`
+- Accent Red (critical/deficit): `#ef4444`
+- Background: `#f8fafc`
+- Card Background: `#ffffff`
+- Text Primary: `#1e293b`
+- Text Secondary: `#64748b`
+
+**Typography:** Inter (system font fallback: sans-serif). Headings bold, body regular.
 
 ## Pages
 
 ### 1. Landing Page (`/`)
 
-Hero section introducing SupplAi to judges before they dive into the dashboard.
+Full-screen hero page **without sidebar**. This is a one-time entry point for judges.
 
 **Content:**
 - Logo + tagline: "Sistem Peringatan Dini Inflasi Pangan Berbasis AI"
 - Animated counting-up stats: Rp4.5T potensi penghematan, 514 kabupaten, 542 TPID, 5 komoditas
 - Mini Indonesia map with pulsing dots on critical regions
 - Brief explanation of 3 modules (Predict, Match, Agent) with icons
-- CTA button: "Masuk ke Dashboard"
+- CTA button: "Masuk ke Dashboard" → navigates to `/dashboard`
 - Team info footer (SupplAi - PIDI 2026)
 
 ### 2. Dashboard Prediksi (`/dashboard`)
 
 Main prediction dashboard showing price forecasts per commodity per region.
+
+**Default state:** Komoditas = Beras, Wilayah = Jakarta, Rentang = 14 hari.
 
 **Filter bar:**
 - Dropdown komoditas: beras, cabai rawit, bawang merah, bawang putih, gula pasir
@@ -40,32 +59,32 @@ Main prediction dashboard showing price forecasts per commodity per region.
 - Selector rentang waktu: 7 hari, 14 hari, 30 hari
 
 **Summary cards (4):**
-- Harga saat ini (e.g. Rp54.400/kg)
+- Harga saat ini (e.g. Rp14.731/kg for beras Jakarta)
 - Perubahan harga (e.g. +147, arrow indicator)
-- Prediksi 14 hari (e.g. Rp58.200/kg)
-- MAPE / confidence (e.g. 7.3%)
+- Prediksi 14 hari (e.g. Rp15.200/kg)
+- MAPE / confidence (e.g. 4.8%)
 
 **Charts:**
-- Line chart: harga aktual (solid) vs prediksi (dashed) with confidence interval shading
+- Line chart: harga aktual (solid) vs prediksi (dashed) with confidence interval shading (area)
 - Bar chart: perbandingan harga antarwilayah
 
 **Interactivity:**
-- Filter changes → smooth animated chart/card updates
+- Filter changes → smooth animated chart/card updates with loading skeleton
 - Hover chart → tooltip with price detail
 - Click bar chart region → navigate to heatmap for that region
 
-### 3. Heatmap (`/heatmap`)
+### 3. Heatmap / Price Matrix (`/heatmap`)
 
-Regional price heatmap showing price changes across districts.
+Regional price matrix showing price changes across districts as a color-coded table (not a geographic heatmap).
 
 **Summary cards (3):**
 - Kabupaten/kota terpantau (514)
 - Rata-rata kenaikan harga (+22.4%)
 - Jumlah wilayah alert
 
-**Heatmap grid:**
-- Table matrix: rows = ~20 wilayah, columns = dates
-- Cell color: green (stable/down) → yellow (slight increase) → red (spike)
+**Price matrix grid (styled HTML table):**
+- Table: rows = ~20 wilayah, columns = dates (7 or 14 days)
+- Cell background color: green (stable/down) → yellow (slight increase) → red (spike)
 - Hover cell → tooltip: wilayah, date, price, % change
 - Sortable by region name / severity
 
@@ -89,9 +108,9 @@ Redistribution recommendation dashboard with Indonesia map.
 - Estimasi biaya logistik (Rp28.5M)
 
 **Indonesia map (main content):**
-- SVG map via React Simple Maps with Indonesia GeoJSON
+- SVG map via React Simple Maps with **provinsi-level TopoJSON** (~200KB, 34 provinces)
 - Surplus provinces highlighted green, deficit highlighted red
-- Animated arc lines showing redistribution routes
+- Dashed lines with animated marker dots showing redistribution routes (simpler than full arc animation, still visually striking)
 - Hover province → tooltip: name, surplus/deficit status, stock volume
 - Hover route → tooltip: origin, destination, volume, cost
 
@@ -141,13 +160,15 @@ Monitoring and alert management for TPID officers.
 
 ## Shared Layout
 
-**Sidebar (desktop):**
+**Sidebar (desktop) — only shown on `/dashboard`, `/heatmap`, `/redistribusi`, `/alerts`:**
 - Dark navy (#1a1f37) background
 - SupplAi logo at top
-- Navigation links with icons: Overview, Dashboard Prediksi, Heatmap, Match Redistribusi, Alert Center
+- Navigation links with icons: Dashboard Prediksi, Heatmap, Match Redistribusi, Alert Center
 - Active page highlighted
 - Notification badge count on Alert Center link
 - Collapsible on tablet
+
+**Landing page (`/`) has NO sidebar** — full-screen standalone hero.
 
 **Responsive behavior:**
 - Desktop: sidebar left, full layout per mockup
@@ -155,6 +176,8 @@ Monitoring and alert management for TPID officers.
 - Mobile: bottom navigation bar (app-style), cards single column, charts stacked vertical, map full width
 
 ## API Routes (Dummy Data)
+
+### Endpoints
 
 ```
 GET /api/predictions?commodity=beras&region=jakarta&range=14
@@ -165,26 +188,111 @@ GET /api/commodities
 GET /api/regions
 ```
 
-All return hardcoded dummy data from TypeScript files, filtered by query params.
+### Sample Response Shapes
 
-## Dummy Data Scope
+**GET /api/predictions:**
+```ts
+{
+  summary: {
+    currentPrice: 14731,
+    priceChange: 147,
+    predictedPrice: 15200,
+    mape: 4.8
+  },
+  timeseries: [
+    { date: "2026-03-01", actual: 14500, predicted: null, upper: null, lower: null },
+    { date: "2026-03-02", actual: 14580, predicted: null, upper: null, lower: null },
+    // ... historical days (actual filled, predicted null)
+    { date: "2026-03-18", actual: 14731, predicted: 14731, upper: 14900, lower: 14560 },
+    { date: "2026-03-19", actual: null, predicted: 14800, upper: 15100, lower: 14500 },
+    // ... future days (actual null, predicted filled with upper/lower bounds)
+  ],
+  comparison: [
+    { region: "Jakarta", price: 14731 },
+    { region: "Surabaya", price: 14200 },
+    { region: "Jayapura", price: 54772 },
+    // ...
+  ]
+}
+```
 
-**Commodities (5):** Beras, Cabai Rawit, Bawang Merah, Bawang Putih, Gula Pasir
+**GET /api/heatmap:**
+```ts
+{
+  summary: { totalRegions: 514, avgIncrease: 22.4, alertCount: 12 },
+  matrix: [
+    { region: "Jayapura", data: [
+      { date: "2026-03-12", price: 54200, change: 2.1 },
+      { date: "2026-03-13", price: 55100, change: 1.7 },
+      // ...
+    ]},
+    // ...
+  ],
+  topCritical: [
+    { region: "Jayapura", commodity: "Beras", change: 15.2 },
+    // ...
+  ]
+}
+```
 
-**Regions (~20 sample):**
-- Jawa: Jakarta, Bandung, Surabaya, Semarang, Yogyakarta
-- Sulawesi: Makassar, Manado, Palu
-- Sumatera: Medan, Palembang, Padang
-- Kalimantan: Balikpapan, Pontianak
-- NTT: Kupang
-- Maluku: Ambon
-- Papua: Jayapura, Merauke, Sorong, Manokwari
+**GET /api/redistribution:**
+```ts
+{
+  summary: { totalRoutes: 32, totalVolume: 845, activeRoutes: "5/13", estimatedCost: 28500000 },
+  provinces: [
+    { id: "JT", name: "Jawa Timur", status: "surplus", stock: 2500 },
+    { id: "PA", name: "Papua", status: "deficit", stock: 120 },
+    // ...
+  ],
+  routes: [
+    { from: "Jawa Timur", to: "Papua", commodity: "Beras", volume: 150, distance: 3200, cost: 4500000, priority: "high" },
+    // ...
+  ]
+}
+```
 
-**Price data:** 90 days historical + 14 days prediction per commodity per region. Realistic price ranges based on proposal data (e.g. beras Jawa ~Rp14.700/kg, Papua ~Rp54.700/kg).
+**GET /api/alerts:**
+```ts
+{
+  summary: { active: 38, thisMonth: 214, avgResponseTime: 2.3, resolved: 127 },
+  alerts: [
+    {
+      id: "ALT-001",
+      severity: "kritis",
+      title: "Lonjakan Cabai Rawit di Kab. Jayapura naik >30%",
+      region: "Jayapura",
+      commodity: "Cabai Rawit",
+      timestamp: "2026-03-18T08:30:00Z",
+      status: "aktif",
+      confidence: 87,
+      detail: {
+        recommendation: "Segera koordinasi dengan TPID Jawa Timur untuk pengiriman 50 ton",
+        history: [
+          { status: "terdeteksi", timestamp: "2026-03-18T08:30:00Z" },
+        ]
+      }
+    },
+    // ...
+  ]
+}
+```
 
-**Alerts:** ~30 alerts with mixed severity, commodity, region, status.
+## Dummy Data Generation
 
-**Redistribution:** 8 surplus provinces, 10+ deficit regions, ~15 routes.
+A TypeScript seed script (`scripts/generate-dummy-data.ts`) generates all dummy data programmatically:
+
+**Price ranges per commodity (Rp/kg):**
+| Commodity | Jawa Base | Papua Base | Volatility |
+|-----------|-----------|------------|------------|
+| Beras | 14,000-15,500 | 45,000-55,000 | Low |
+| Cabai Rawit | 40,000-80,000 | 100,000-150,000 | High |
+| Bawang Merah | 35,000-50,000 | 55,000-70,000 | Medium |
+| Bawang Putih | 30,000-45,000 | 50,000-65,000 | Medium |
+| Gula Pasir | 16,000-18,000 | 22,000-28,000 | Low |
+
+Prices for other regions interpolated between Jawa and Papua extremes based on geographic distance. Daily prices generated with random walk + seasonal patterns (e.g. price spikes near Ramadan). Prediction data continues the trend with added noise for confidence intervals.
+
+Output: TypeScript files in `src/data/` imported by API routes.
 
 ## Wow-Factor Polish
 
@@ -193,9 +301,9 @@ All return hardcoded dummy data from TypeScript files, filtered by query params.
 - Loading skeletons when switching data (simulate real API feel)
 - Smooth chart animations on filter change
 - Pulsing dots on map for critical regions
-- Animated arc lines on redistribution map
+- Dashed route lines with animated marker dots on redistribution map
 - Toast notifications for simulated real-time alerts
-- Export PDF button (simulated)
+- Export PDF button: shows toast "Laporan berhasil diunduh" (no actual PDF generation)
 - Consistent dark navy theme matching mockups
 - Fully responsive (mobile bottom nav)
 
@@ -203,4 +311,4 @@ All return hardcoded dummy data from TypeScript files, filtered by query params.
 
 - GitHub repo: Richjuliano20
 - Vercel project: richard-julianos-projects
-- Single `next build` → static export + API routes on Vercel serverless
+- Standard `next build` deployed to Vercel with serverless API routes
