@@ -127,3 +127,17 @@
     @apply font-sans;
   }
 }
+
+/* SupplAi Design Tokens */
+:root {
+  --sidebar-bg: #1a1f37;
+  --primary-blue: #2563eb;
+  --accent-green: #22c55e;
+  --accent-yellow: #eab308;
+  --accent-orange: #f97316;
+  --accent-red: #ef4444;
+  --bg-main: #f8fafc;
+  --card-bg: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+}
