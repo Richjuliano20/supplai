@@ -604,7 +604,7 @@ export function getAlerts(filters?: {
     summary: {
       active,
       thisMonth: alertsData.length,
-      avgResponseTime: 4.2,
+      avgResponseTime: 2.3,
       resolved,
     },
     alerts: filtered,

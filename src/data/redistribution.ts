@@ -30,9 +30,9 @@ const provinces: RedistributionProvince[] = [
   { id: "sulawesi-utara", name: "Sulawesi Utara", status: "deficit", stock: 160 },
 ]
 
-// Cost estimate: Rp3.000/ton/km
+// Cost estimate: Rp1.500/ton/km (realistic inter-island bulk freight)
 function calcCost(volume: number, distance: number): number {
-  return volume * distance * 3000
+  return volume * distance * 1500
 }
 
 // ---------------------------------------------------------------------------

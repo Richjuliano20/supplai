@@ -125,17 +125,25 @@ function generateFullSeries(
 
   // Random-walk historical prices
   const prices: number[] = []
-  let price = regionBase * (0.92 + rand() * 0.16) // start with ±8% variation
+  // Start near the base price with only ±1.5% variation
+  let price = regionBase * (0.985 + rand() * 0.03)
 
   for (let d = 0; d < HIST_DAYS + PRED_DAYS; d++) {
     // Seasonal Ramadan spike: around day 70-90 of the series (early March)
     let trendBias = 0
     if (d >= 65 && d <= 90) {
-      trendBias = regionBase * 0.0015 // gradual increase leading to Ramadan
+      trendBias = regionBase * 0.002 // gradual increase leading to Ramadan
     }
 
-    const change = (rand() - 0.48) * cfg.volatility * price + trendBias
-    price = Math.max(price + change, cfg.javaMin * 0.8)
+    // Mean-reversion: gently pull price back toward regional base (prevents excessive drift)
+    const meanReversion = (regionBase - price) * 0.03
+
+    // Random noise + mean reversion + seasonal bias
+    const noise = (rand() - 0.50) * cfg.volatility * price
+    const change = noise + meanReversion + trendBias
+
+    // Floor at 90% of javaMin to prevent unrealistically low prices
+    price = Math.max(price + change, cfg.javaMin * 0.9)
     prices.push(Math.round(price))
   }
 
