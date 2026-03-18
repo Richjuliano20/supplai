@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { motion } from "framer-motion"
 import { useApi } from "@/hooks/use-api"
 import type { PredictionResponse } from "@/lib/types"
 import { FilterBar } from "@/components/layout/filter-bar"
@@ -23,7 +24,12 @@ export default function DashboardPage() {
   const { data, loading } = useApi<PredictionResponse>(apiUrl)
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="p-4 md:p-6 space-y-6"
+    >
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-[#1e293b]">Dashboard Prediksi Harga</h1>
@@ -83,6 +89,6 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

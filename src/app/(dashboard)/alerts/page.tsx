@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
 import { useApi } from "@/hooks/use-api"
 import { AlertResponse } from "@/lib/types"
 import { AlertFilters } from "@/components/alerts/alert-filters"
@@ -32,11 +33,16 @@ export default function AlertsPage() {
   }, [])
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="p-4 md:p-6 space-y-6"
+    >
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Alert Center</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="text-2xl font-bold text-[#1e293b]">Alert Center</h1>
+        <p className="text-sm text-[#64748b] mt-1">
           Pusat pemantauan dan pengelolaan peringatan harga pangan
         </p>
       </div>
@@ -71,7 +77,7 @@ export default function AlertsPage() {
                 <AlertTriangle className="size-4" />
                 <span className="text-xs font-medium">Alert Bulan Ini</span>
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-2xl font-bold text-[#1e293b]">
                 {data?.summary.thisMonth ?? 0}
               </p>
             </CardContent>
@@ -83,7 +89,7 @@ export default function AlertsPage() {
                 <Clock className="size-4" />
                 <span className="text-xs font-medium">Rata-rata Respons</span>
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-2xl font-bold text-[#1e293b]">
                 {data?.summary.avgResponseTime ?? 0}
                 <span className="text-sm font-normal text-muted-foreground ml-1">hari</span>
               </p>
@@ -104,7 +110,7 @@ export default function AlertsPage() {
 
       {/* Filters */}
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filter Peringatan</h2>
+        <h2 className="text-sm font-semibold text-[#1e293b]">Filter Peringatan</h2>
         <AlertFilters
           severity={severity}
           status={status}
@@ -140,6 +146,6 @@ export default function AlertsPage() {
           alerts={data?.alerts ?? []}
         />
       )}
-    </div>
+    </motion.div>
   )
 }

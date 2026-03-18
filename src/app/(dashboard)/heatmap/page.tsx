@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { motion } from "framer-motion"
 import { useApi } from "@/hooks/use-api"
 import { HeatmapResponse } from "@/lib/types"
 import { formatPercent } from "@/lib/format"
@@ -19,7 +20,12 @@ export default function HeatmapPage() {
   )
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="p-4 md:p-6 space-y-6"
+    >
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold text-[#1e293b]">
@@ -102,6 +108,6 @@ export default function HeatmapPage() {
           <TopCritical data={data?.topCritical ?? []} loading={loading} />
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
