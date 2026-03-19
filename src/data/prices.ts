@@ -123,27 +123,42 @@ function generateFullSeries(
   }
   const rand = mulberry32(seedNum + 123456)
 
-  // Random-walk historical prices
+  // Random-walk historical prices with upward trend (inflation narrative)
   const prices: number[] = []
-  // Start near the base price with only ±1.5% variation
-  let price = regionBase * (0.985 + rand() * 0.03)
+  // Start ~8% below base so the chart rises toward and above base over 90 days
+  let price = regionBase * (0.90 + rand() * 0.03)
 
-  for (let d = 0; d < HIST_DAYS + PRED_DAYS; d++) {
-    // Seasonal Ramadan spike: around day 70-90 of the series (early March)
-    let trendBias = 0
-    if (d >= 65 && d <= 90) {
-      trendBias = regionBase * 0.002 // gradual increase leading to Ramadan
+  // Target price rises over time: starts low, ends ~5-10% above base
+  // This creates a clear upward trend matching the inflation/Ramadan narrative
+  const totalDays = HIST_DAYS + PRED_DAYS
+
+  for (let d = 0; d < totalDays; d++) {
+    // Base upward drift: ~0.1% per day → ~10% over 90 days
+    let trendBias = regionBase * 0.001
+
+    // Accelerating Ramadan spike: stronger in the last 25 days of historical + all prediction
+    if (d >= 65) {
+      // Ramp up: starts at 0.15%, peaks at 0.4% per day
+      const rampProgress = Math.min((d - 65) / 30, 1)
+      trendBias = regionBase * (0.0015 + 0.0025 * rampProgress)
     }
 
-    // Mean-reversion: gently pull price back toward regional base (prevents excessive drift)
-    const meanReversion = (regionBase - price) * 0.03
+    // Prediction period: continue upward trend even more (the "warning" the system gives)
+    if (d >= HIST_DAYS) {
+      trendBias = regionBase * 0.004
+    }
 
-    // Random noise + mean reversion + seasonal bias
+    // Light mean-reversion toward the TRENDING target, not the static base
+    // Target rises linearly from 0.92*base to 1.08*base
+    const trendTarget = regionBase * (0.92 + 0.18 * (d / totalDays))
+    const meanReversion = (trendTarget - price) * 0.02
+
+    // Random noise + mean reversion + trend bias
     const noise = (rand() - 0.50) * cfg.volatility * price
     const change = noise + meanReversion + trendBias
 
-    // Floor at 90% of javaMin to prevent unrealistically low prices
-    price = Math.max(price + change, cfg.javaMin * 0.9)
+    // Floor at 85% of javaMin
+    price = Math.max(price + change, cfg.javaMin * 0.85)
     prices.push(Math.round(price))
   }
 
